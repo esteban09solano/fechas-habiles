@@ -9,9 +9,12 @@ import {
 
 import { DAYS, WORKING_HOURS } from "../constants/time";
 
-export const getDiasHabiles = (req: Request, res: Response) => {
-  const daysParam = req.query.days;
-  const hoursParam = req.query.hours;
+export const getDiasHabiles = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const daysParam = req.query.days as string | undefined;
+  const hoursParam = req.query.hours as string | undefined;
   const dateParam = req.query.date as string | undefined;
 
   let error: ApiErrorResponse = { error: "", message: "" };
@@ -64,10 +67,18 @@ export const getDiasHabiles = (req: Request, res: Response) => {
   }
   // console.log("Fecha inicial:", dateOficial);
 
-  calculateDate({ days, hours, date: dateOficial }).then((result) => {
+  const result = await calculateDate({ days, hours, date: dateOficial });
+  if (result) {
     success = result;
     return res.status(200).json(success);
-  });
+  }
+
+  error = {
+    error: "CalculationError",
+    message: "No se pudo calcular la fecha hábil.",
+  };
+
+  return res.status(500).json(error);
 };
 
 const calculateDate = async ({
@@ -76,7 +87,7 @@ const calculateDate = async ({
   date,
 }: CalculateParams): Promise<ApiSuccessResponse> => {
   const holidaysService = new HolidaysColombiaService();
-  const holidays = await holidaysService.getHolidays();
+  const holidays: string[] = await holidaysService.getHolidays();
 
   date = adjustToWorkTime(date, holidays);
 
