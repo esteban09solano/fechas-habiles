@@ -79,10 +79,16 @@ const calculateDate = async ({
   const holidays = await holidaysService.getHolidays();
 
   date = adjustToWorkTime(date, holidays);
-  console.log(date);
 
-  const resultDate = date.plus({ days, hours }).setZone("utc");
-  return { date: resultDate.toISO()! };
+  console.log("Fecha ajustada a horario laboral:", date.toISO());
+  for (let i = 0; i < days; i++) {
+    date = addOneBusinessDay(date, holidays);
+  }
+
+  date = addWorkingHours(date, hours, holidays);
+  const utcResult = date.setZone("utc");
+
+  return { date: utcResult.toISO()! };
 };
 
 const isNumberPositive = (value: number): boolean => {
@@ -94,6 +100,7 @@ const adjustToWorkTime = (date: DateTime, holidays: string[]): DateTime => {
   // Considerar fines de semana y festivos
   while (isNonWorkingDay(date, holidays)) {
     // Retroceder al anterior día hábil a las 5:00 PM
+    console.log(date.toISO(), "no es día hábil, ajustando...");
     date = date
       .minus({ days: 1 })
       .set({ hour: WORKING_HOURS.END, minute: 0, second: 0, millisecond: 0 });
@@ -119,4 +126,63 @@ const isNonWorkingDay = (date: DateTime, holidays: string[]): boolean => {
     date.weekday === DAYS.SATURDAY || date.weekday === DAYS.SUNDAY;
   const isHoliday = holidays.includes(date.toISODate()!);
   return isWeekend || isHoliday;
+};
+
+const addOneBusinessDay = (date: DateTime, holidays: string[]): DateTime => {
+  let next = date.plus({ days: 1 });
+
+  while (isNonWorkingDay(next, holidays)) {
+    next = next.plus({ days: 1 });
+  }
+
+  return next;
+};
+
+const addWorkingHours = (
+  date: DateTime,
+  hoursToAdd: number,
+  holidays: string[]
+): DateTime => {
+  let current = date;
+  let remaining = hoursToAdd;
+  // return current;
+  while (remaining > 0) {
+    // Si pasa del fin de jornada, mover al siguiente día hábil
+    if (current.hour >= WORKING_HOURS.END) {
+      current = addOneBusinessDay(current, holidays).set({
+        hour: WORKING_HOURS.START,
+        minute: 0,
+      });
+      continue;
+    }
+
+    // Saltar almuerzo
+    if (
+      current.hour >= WORKING_HOURS.LUNCH_START &&
+      current.hour < WORKING_HOURS.LUNCH_END
+    ) {
+      current = current.set({ hour: WORKING_HOURS.LUNCH_END, minute: 0 });
+      continue;
+    }
+
+    // Calcular siguiente hora límite (almuerzo o fin de jornada)
+    const nextBreak =
+      current.hour < WORKING_HOURS.LUNCH_START
+        ? WORKING_HOURS.LUNCH_START
+        : current.hour < WORKING_HOURS.END
+        ? WORKING_HOURS.END
+        : WORKING_HOURS.END;
+
+    const hoursAvailable = nextBreak - (current.hour + current.minute / 60);
+
+    if (remaining <= hoursAvailable) {
+      current = current.plus({ hours: remaining });
+      remaining = 0;
+    } else {
+      current = current.plus({ hours: hoursAvailable });
+      remaining -= hoursAvailable;
+    }
+  }
+
+  return current;
 };
