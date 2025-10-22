@@ -1,0 +1,43 @@
+{
+  "name": "fechas-habiles",
+  "version": "1.0.0",
+  "description": "Esta API se encarga de calcular fechas hábiles en Colombia, teniendo en cuenta los dias festivos nacionales, horarios laborales y la zona horaria (respuesta en UTC).",
+  "main": "app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node ./dist/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esteban09solano/fechas-habiles.git"
+  },
+  "keywords": [
+    "fechas",
+    "hábiles",
+    "Colombia",
+    "horas",
+    "UTC"
+  ],
+  "author": "Esteban Solano Gómez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/esteban09solano/fechas-habiles/issues"
+  },
+  "homepage": "https://github.com/esteban09solano/fechas-habiles#readme",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "luxon": "^3.7.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.3",
+    "@types/luxon": "^3.7.1",
+    "tsx": "^4.20.6"
+  }
+}
