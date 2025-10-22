@@ -111,7 +111,7 @@ const calculateDate = async ({
   date = addWorkingHours(date, hours, holidays);
   const utcResult = date.setZone("utc");
 
-  return { date: utcResult.toISO()! };
+  return { date: utcResult.toISO({ precision: "seconds" })! };
 };
 
 const isNumberPositive = (value: number): boolean => {
@@ -131,14 +131,26 @@ const adjustToWorkTime = (date: DateTime, holidays: string[]): DateTime => {
   // console.log("Ajustando fecha inicial:", date.toISO());
 
   if (date.hour >= WORKING_HOURS.END) {
-    return date.set({ hour: WORKING_HOURS.END, minute: 0 });
+    return date.set({
+      hour: WORKING_HOURS.END,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
   } else if (date.hour < WORKING_HOURS.START) {
-    return date.minus({ days: 1 }).set({ hour: WORKING_HOURS.END, minute: 0 });
+    return date
+      .minus({ days: 1 })
+      .set({ hour: WORKING_HOURS.END, minute: 0, second: 0, millisecond: 0 });
   } else if (
     date.hour >= WORKING_HOURS.LUNCH_START &&
     date.hour < WORKING_HOURS.LUNCH_END
   ) {
-    return date.set({ hour: WORKING_HOURS.LUNCH_START, minute: 0 });
+    return date.set({
+      hour: WORKING_HOURS.LUNCH_START,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
   }
 
   return date;
@@ -175,6 +187,8 @@ const addWorkingHours = (
       current = addOneBusinessDay(current, holidays).set({
         hour: WORKING_HOURS.START,
         minute: 0,
+        second: 0,
+        millisecond: 0,
       });
       continue;
     }
@@ -184,7 +198,12 @@ const addWorkingHours = (
       current.hour >= WORKING_HOURS.LUNCH_START &&
       current.hour < WORKING_HOURS.LUNCH_END
     ) {
-      current = current.set({ hour: WORKING_HOURS.LUNCH_END, minute: 0 });
+      current = current.set({
+        hour: WORKING_HOURS.LUNCH_END,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+      });
       continue;
     }
 
