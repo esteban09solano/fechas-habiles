@@ -22,7 +22,7 @@ export const getDiasHabiles = async (
 
   if (!daysParam && !hoursParam) {
     error = {
-      error: "MissingParams",
+      error: "InvalidParameters",
       message: "Debe enviar al menos uno de los parámetros: 'days' o 'hours'.",
     };
     return res.status(400).json(error);
@@ -34,7 +34,7 @@ export const getDiasHabiles = async (
 
   if (daysParam && !isNumberPositive(days)) {
     error = {
-      error: "InvalidDays",
+      error: "InvalidParameters",
       message: "El parámetro 'days' debe ser un número entero positivo.",
     };
     return res.status(400).json(error);
@@ -42,7 +42,7 @@ export const getDiasHabiles = async (
 
   if (hoursParam && !isNumberPositive(hours)) {
     error = {
-      error: "InvalidHours",
+      error: "InvalidParameters",
       message: "El parámetro 'hours' debe ser un número entero positivo.",
     };
     return res.status(400).json(error);
@@ -54,7 +54,7 @@ export const getDiasHabiles = async (
       !DateTime.fromISO(dateParam, { zone: "utc" }).isValid
     ) {
       error = {
-        error: "InvalidDate",
+        error: "InvalidParameters",
         message:
           "El parámetro 'date' debe estar en formato ISO UTC con Z (por ejemplo: 2025-10-21T08:00:00Z)",
       };
@@ -68,9 +68,15 @@ export const getDiasHabiles = async (
   // console.log("Fecha inicial:", dateOficial);
 
   const result = await calculateDate({ days, hours, date: dateOficial });
+
   if (result) {
-    success = result;
-    return res.status(200).json(success);
+    if ("error" in result) {
+      // TypeScript ya sabe que es ApiErrorResponse
+      return res.status(503).json(result);
+    } else {
+      success = result;
+      return res.status(200).json(success);
+    }
   }
 
   error = {
@@ -85,10 +91,16 @@ const calculateDate = async ({
   days,
   hours,
   date,
-}: CalculateParams): Promise<ApiSuccessResponse> => {
+}: CalculateParams): Promise<ApiSuccessResponse | ApiErrorResponse> => {
   const holidaysService = new HolidaysColombiaService();
   const holidays: string[] = await holidaysService.getHolidays();
 
+  if (holidays.length === 0) {
+    return {
+      error: "Unavailable",
+      message: "No se pudieron obtener los días festivos.",
+    };
+  }
   date = adjustToWorkTime(date, holidays);
 
   console.log("Fecha ajustada a horario laboral:", date.toISO());
