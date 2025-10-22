@@ -10,6 +10,6 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", router);
 // 404 handler
-app.use((req, res) =>
+app.use((req: express.Request, res: express.Response) =>
   res.status(404).json({ error: "NotFound", message: "Route not found" })
 );
